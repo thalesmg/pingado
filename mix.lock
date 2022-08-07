@@ -1,0 +1,3 @@
+%{
+  "snabbkaffe": {:hex, :snabbkaffe, "1.0.1", "8e95ccbc90e1445c6b504d7980a35fe87e140bd694ced35851965b87d42bd882", [:rebar3], [], "hexpm", "035812759963897b71ee69a11e8dff93bbbb0f475055479a557dd3c4fd72fe33"},
+}
