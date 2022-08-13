@@ -7,8 +7,16 @@ defmodule Pingado do
   defmacro meta(), do: quote(do: unquote(@meta))
   defmacro span(), do: quote(do: unquote(@span))
 
+  @spec start_trace() :: :ok
   defdelegate start_trace(), to: :snabbkaffe
+  @spec stop() :: :ok
   defdelegate stop(), to: :snabbkaffe
+
+  @spec subscribe((%{} -> boolean()), pos_integer(), pos_integer() | :infinity) ::
+          {:ok, reference()}
+  defdelegate subscribe(match_fn, n_events, timeout), to: :snabbkaffe
+  @spec receive_events(reference()) :: {:ok | :timeout, [%{}]}
+  defdelegate receive_events(sub_ref), to: :snabbkaffe
 
   if Mix.env() == :test do
     defmacro tp(level \\ :debug, kind, event) do
@@ -117,6 +125,16 @@ defmodule Pingado do
     end
   end
 
+  defmacro block_until(pattern, timeout, back_in_time \\ :infinity) do
+    quote do
+      :snabbkaffe.block_until(
+        Pingado.match_event(unquote(pattern)),
+        unquote(timeout),
+        unquote(back_in_time)
+      )
+    end
+  end
+
   defmacro wait_async_action(pattern, timeout \\ :infinity, do: action) do
     quote do
       :snabbkaffe.wait_async_action(
@@ -155,6 +173,18 @@ defmodule Pingado do
           _ -> false
         end
       end
+    end
+  end
+
+  defmacro retry(timeout, n, do: code) do
+    quote do
+      :snabbkaffe.retry(
+        unquote(timeout),
+        unquote(n),
+        fn ->
+          unquote(code)
+        end
+      )
     end
   end
 end

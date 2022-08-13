@@ -10,7 +10,8 @@ defmodule PingadoTest do
       tp_span: 4,
       causality: 4,
       wait_async_action: 3,
-      inject_crash: 3
+      inject_crash: 3,
+      retry: 3
     ]
 
   test "check_trace" do
@@ -151,5 +152,35 @@ defmodule PingadoTest do
     assert Agent.get(pid, & &1) == :state
 
     :ok = Pingado.stop()
+  end
+
+  test "retry" do
+    {:ok, pid} = Agent.start_link(fn -> 0 end)
+
+    retry 1_000, 10 do
+      x = Agent.get_and_update(pid, fn x -> {x, x + 1} end)
+
+      unless x >= 5 do
+        raise "not yet"
+      end
+    end
+  end
+
+  test "subscribe" do
+    :ok = Pingado.start_trace()
+
+    {:ok, sub_ref} =
+      Pingado.subscribe(
+        Pingado.match_event(%{Pingado.kind() => :go}),
+        _n_events = 1,
+        _timeout = 2_000
+      )
+
+    spawn(fn ->
+      Process.sleep(1_000)
+      tp(:go, %{success: true})
+    end)
+
+    assert {:ok, [%{success: true}]} = Pingado.receive_events(sub_ref)
   end
 end
