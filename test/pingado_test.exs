@@ -11,7 +11,8 @@ defmodule PingadoTest do
       causality: 4,
       wait_async_action: 3,
       inject_crash: 3,
-      retry: 3
+      retry: 3,
+      force_ordering: 2
     ]
 
   test "check_trace" do
@@ -182,5 +183,26 @@ defmodule PingadoTest do
     end)
 
     assert {:ok, [%{success: true}]} = Pingado.receive_events(sub_ref)
+  end
+
+  test "force_ordering" do
+    check_trace do
+      force_ordering(%{type: :a}, %{type: :b})
+
+      spawn(fn ->
+        Process.sleep(1_000)
+        tp(:event, %{type: :a})
+      end)
+
+      tp(:event, %{type: :b})
+      :ok
+    after
+      [{"check name", &force_ordering_check/1}]
+    end
+  end
+
+  defp force_ordering_check(trace) do
+    assert [%{type: :a}, %{type: :b}] = Enum.filter(trace, &(&1[Pingado.kind()] == :event))
+    :ok
   end
 end

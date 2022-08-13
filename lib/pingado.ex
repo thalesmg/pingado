@@ -187,4 +187,18 @@ defmodule Pingado do
       )
     end
   end
+
+  defmacro force_ordering(continue_pattern, n_events \\ 1, delayed_pattern, guard \\ true) do
+    quote do
+      :snabbkaffe_nemesis.force_ordering(
+        Pingado.match_event(unquote(delayed_pattern)),
+        unquote(n_events),
+        Pingado.match2(
+          unquote(delayed_pattern),
+          unquote(continue_pattern),
+          unquote(guard)
+        )
+      )
+    end
+  end
 end
