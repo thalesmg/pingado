@@ -11,6 +11,8 @@ defmodule Pingado do
   defdelegate start_trace(), to: :snabbkaffe
   @spec stop() :: :ok
   defdelegate stop(), to: :snabbkaffe
+  @spec forward_trace(node()) :: :ok
+  defdelegate forward_trace(node), to: :snabbkaffe
 
   @spec subscribe((%{} -> boolean()), pos_integer(), pos_integer() | :infinity) ::
           {:ok, reference()}
@@ -18,8 +20,8 @@ defmodule Pingado do
   @spec receive_events(reference()) :: {:ok | :timeout, [%{}]}
   defdelegate receive_events(sub_ref), to: :snabbkaffe
 
-  if Mix.env() == :test do
-    defmacro tp(level \\ :debug, kind, event) do
+  defmacro tp(level \\ :debug, kind, event) do
+    if Mix.env() == :test do
       quote do
         :snabbkaffe.tp(
           fn -> :ok end,
@@ -28,9 +30,7 @@ defmodule Pingado do
           unquote(event)
         )
       end
-    end
-  else
-    defmacro tp(_level \\ :debug, _kind, _event) do
+    else
       quote(do: :ok)
     end
   end
